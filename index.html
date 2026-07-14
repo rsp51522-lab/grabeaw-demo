@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grabeaw 見積書自動作成システム｜デモ画面</title>
+<style>
+  :root {
+    --main: #088070;      /* 帳票PDFと同じGrabeawグリーン */
+    --main-light: #e2f2ee;
+    --main-dark: #065f53;
+    --green: #059669;
+    --green-light: #d1fae5;
+    --gray: #6b7280;
+    --bg: #f4f4f7;
+    --card: #ffffff;
+    --border: #e5e7eb;
+    --red: #dc2626;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+    background: var(--bg);
+    color: #1f2937;
+    line-height: 1.6;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 16px 16px 80px; }
+
+  /* ヘッダー */
+  header {
+    background: linear-gradient(135deg, var(--main-dark), var(--main));
+    color: #fff;
+    padding: 22px 16px;
+    text-align: center;
+  }
+  header h1 { font-size: 20px; letter-spacing: .05em; }
+  header p { font-size: 13px; opacity: .9; margin-top: 4px; }
+  .demo-badge {
+    display: inline-block;
+    background: #fbbf24;
+    color: #78350f;
+    font-size: 11px;
+    font-weight: bold;
+    border-radius: 999px;
+    padding: 2px 12px;
+    margin-bottom: 6px;
+    letter-spacing: .1em;
+  }
+
+  /* ステップ表示 */
+  .steps {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    margin: 20px 0;
+    flex-wrap: wrap;
+  }
+  .step {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--gray);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 6px 14px;
+  }
+  .step .num {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--border);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: bold;
+  }
+  .step.active { border-color: var(--main); color: var(--main-dark); font-weight: bold; }
+  .step.active .num { background: var(--main); }
+  .step.done { color: var(--green); border-color: var(--green); }
+  .step.done .num { background: var(--green); }
+
+  /* カード */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px;
+    margin-bottom: 18px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.05);
+  }
+  .card h2 {
+    font-size: 16px;
+    color: var(--main-dark);
+    border-left: 4px solid var(--main);
+    padding-left: 10px;
+    margin-bottom: 16px;
+  }
+
+  /* フォーム */
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 4px; }
+  .field .req { color: var(--red); font-size: 11px; margin-left: 4px; }
+  .field input[type=text], .field input[type=email], .field select, .field textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 15px;
+    background: #fff;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    outline: 2px solid var(--main-light);
+    border-color: var(--main);
+  }
+  .radio-row { display: flex; gap: 14px; flex-wrap: wrap; }
+  .radio-row label { font-weight: normal; font-size: 14px; display: flex; align-items: center; gap: 5px; }
+
+  /* 商品表 */
+  table.products { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.products th, table.products td {
+    border-bottom: 1px solid var(--border);
+    padding: 9px 6px;
+    text-align: left;
+    vertical-align: middle;
+  }
+  table.products th { background: var(--main-light); color: var(--main-dark); font-size: 12px; }
+  table.products td.num, table.products th.num { text-align: right; white-space: nowrap; }
+  table.products select { padding: 6px 8px; border-radius: 6px; border: 1px solid #d1d5db; font-size: 14px; }
+
+  .total-box {
+    background: var(--main-light);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-top: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+  }
+  .total-box strong { font-size: 20px; color: var(--main-dark); }
+
+  .btn {
+    display: inline-block;
+    width: 100%;
+    background: var(--main);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    padding: 14px;
+    cursor: pointer;
+    margin-top: 16px;
+    transition: background .2s;
+  }
+  .btn:hover { background: var(--main-dark); }
+  .btn.sub { background: #fff; color: var(--main); border: 2px solid var(--main); }
+  .btn.sub:hover { background: var(--main-light); }
+  .error-msg { color: var(--red); font-size: 13px; margin-top: 10px; display: none; }
+
+  /* 自動処理アニメーション */
+  .flow { list-style: none; }
+  .flow li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 6px;
+    border-bottom: 1px dashed var(--border);
+    font-size: 14px;
+    color: #9ca3af;
+    transition: color .3s;
+  }
+  .flow li:last-child { border-bottom: none; }
+  .flow .icon {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--border);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    flex-shrink: 0;
+    transition: background .3s;
+  }
+  .flow li.running { color: var(--main-dark); font-weight: bold; }
+  .flow li.running .icon { background: var(--main); animation: pulse 1s infinite; }
+  .flow li.done { color: #1f2937; }
+  .flow li.done .icon { background: var(--green); }
+  .flow li .detail { font-size: 11px; color: var(--gray); font-weight: normal; display: block; }
+  @keyframes pulse { 0%,100% { transform: scale(1);} 50% { transform: scale(1.15);} }
+
+  /* 見積書プレビュー */
+  .estimate {
+    border: 1px solid #c7c7c7;
+    background: #fff;
+    padding: 28px 26px;
+    font-size: 13px;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+  .estimate .doc-title {
+    text-align: center;
+    font-size: 22px;
+    letter-spacing: .5em;
+    text-indent: .5em;
+    border-bottom: 3px double #333;
+    padding-bottom: 8px;
+    margin-bottom: 18px;
+  }
+  .est-head { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+  .est-addressee { font-size: 16px; border-bottom: 1px solid #333; padding: 4px 30px 4px 4px; }
+  .est-company { font-size: 11px; text-align: right; color: #374151; }
+  .est-company .co-name { font-size: 14px; font-weight: bold; color: #111; }
+  .est-total {
+    background: var(--main-light);
+    display: inline-block;
+    padding: 8px 22px;
+    font-size: 15px;
+    font-weight: bold;
+    border: 1px solid var(--main);
+    margin: 10px 0 16px;
+  }
+  table.est-items { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 12px; }
+  table.est-items th, table.est-items td { border: 1px solid #9ca3af; padding: 6px 8px; }
+  table.est-items th { background: #e2f2ee; }
+  table.est-items td.num { text-align: right; }
+  .est-sums { width: 240px; margin-left: auto; font-size: 13px; }
+  .est-sums div { display: flex; justify-content: space-between; border-bottom: 1px solid #d1d5db; padding: 4px 6px; }
+  .est-sums div.grand { font-weight: bold; background: #e2f2ee; border: 1px solid var(--main); }
+  .est-note { margin-top: 14px; font-size: 11px; color: #4b5563; }
+
+  .filename-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    margin: 14px auto;
+    max-width: 640px;
+    word-break: break-all;
+  }
+
+  /* メールプレビュー */
+  .mail {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .mail .mail-head {
+    background: #f9fafb;
+    padding: 10px 14px;
+    font-size: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .mail .mail-head .subject { font-size: 14px; font-weight: bold; color: #111; }
+  .mail .mail-body { padding: 14px; font-size: 13px; white-space: pre-wrap; }
+  .attach {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--main-light);
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 12px;
+    color: var(--main-dark);
+    margin: 8px 14px 14px;
+  }
+  .tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: bold;
+    border-radius: 4px;
+    padding: 1px 8px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .tag.customer { background: var(--green-light); color: var(--green); }
+  .tag.admin { background: #fee2e2; color: var(--red); }
+
+  /* 管理表プレビュー */
+  .sheet-wrap { overflow-x: auto; }
+  table.sheet { border-collapse: collapse; font-size: 11px; white-space: nowrap; }
+  table.sheet th, table.sheet td { border: 1px solid #cbd5e1; padding: 5px 8px; }
+  table.sheet th { background: #066253; color: #fff; font-weight: normal; }
+  table.sheet td.link { color: #2563eb; text-decoration: underline; }
+  table.sheet td.link a { color: #2563eb; cursor: pointer; }
+  .filename-chip a { color: #92400e; font-weight: bold; cursor: pointer; text-decoration: underline; white-space: nowrap; margin-left: auto; }
+  .sheet-label { font-size: 12px; font-weight: bold; color: var(--main-dark); margin: 14px 0 6px; }
+
+  .hidden { display: none; }
+  .center { text-align: center; }
+  .note { font-size: 12px; color: var(--gray); margin-top: 10px; }
+
+  /* 編集可能エリア */
+  [contenteditable="true"] { cursor: text; }
+  [contenteditable="true"]:hover { outline: 2px dashed #f59e0b; outline-offset: 2px; }
+  [contenteditable="true"]:focus { outline: 2px solid var(--main); outline-offset: 2px; background: #fffdf3; }
+  .edit-hint {
+    display: inline-block;
+    font-size: 12px;
+    color: #92400e;
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    border-radius: 6px;
+    padding: 5px 12px;
+    margin-bottom: 10px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="demo-badge">DEMO</div>
+  <h1>Grabeaw 商品注文・見積書自動作成システム</h1>
+  <p>フォーム送信から見積書PDF・メール送信まで全自動 ─ 体験デモ</p>
+</header>
+
+<div class="wrap">
+
+  <div class="steps">
+    <div class="step active" id="stepTab1"><span class="num">1</span>注文フォーム</div>
+    <div class="step" id="stepTab2"><span class="num">2</span>自動処理</div>
+    <div class="step" id="stepTab3"><span class="num">3</span>見積書PDF</div>
+    <div class="step" id="stepTab4"><span class="num">4</span>メール・管理表</div>
+  </div>
+
+  <!-- ===== 画面1: 注文フォーム ===== -->
+  <section id="screen1">
+    <div class="card">
+      <h2>商品注文フォーム（Googleフォームの再現）</h2>
+
+      <div class="field">
+        <label>注文者区分<span class="req">必須</span></label>
+        <div class="radio-row">
+          <label><input type="radio" name="ctype" value="個人" checked>個人</label>
+          <label><input type="radio" name="ctype" value="法人">法人</label>
+          <label><input type="radio" name="ctype" value="サロン・店舗">サロン・店舗</label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>会社名・店舗名（法人・店舗の場合）</label>
+        <input type="text" id="company" placeholder="例）株式会社サンプル美容室">
+      </div>
+
+      <div class="field">
+        <label>お客様名<span class="req">必須</span></label>
+        <input type="text" id="name" placeholder="例）浅野 太郎">
+      </div>
+
+      <div class="field">
+        <label>メールアドレス<span class="req">必須</span></label>
+        <input type="email" id="email" placeholder="例）sample@example.com">
+      </div>
+
+      <div class="field">
+        <label>支払方法<span class="req">必須</span></label>
+        <select id="payment">
+          <option>銀行振込</option>
+          <option>現金</option>
+          <option>その他</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>ご注文商品（数量を選択）<span class="req">1点以上</span></label>
+        <table class="products">
+          <thead>
+            <tr><th>商品名</th><th>内容量</th><th class="num">税込単価</th><th class="num">数量</th></tr>
+          </thead>
+          <tbody id="productRows"></tbody>
+        </table>
+      </div>
+
+      <div class="total-box">
+        <span>ご注文金額（税込）</span>
+        <strong id="liveTotal">¥0</strong>
+      </div>
+
+      <p class="error-msg" id="formError"></p>
+      <button class="btn" onclick="submitOrder()">この内容で注文を送信する</button>
+      <p class="note">※デモのため実際の送信・保存・メール送信は行われません。</p>
+    </div>
+  </section>
+
+  <!-- ===== 画面2: 自動処理 ===== -->
+  <section id="screen2" class="hidden">
+    <div class="card">
+      <h2>フォーム送信後、システムが自動で処理します</h2>
+      <ul class="flow" id="flowList"></ul>
+      <p class="note center" id="flowNote">処理中…（実際の所要時間は約30秒〜1分です）</p>
+    </div>
+  </section>
+
+  <!-- ===== 画面3: 見積書 ===== -->
+  <section id="screen3" class="hidden">
+    <div class="card">
+      <h2>御見積書PDFが自動作成されました</h2>
+
+      <div class="filename-chip">
+        <span>📄</span><span>Googleドライブに保存：<b id="pdfFileName"></b></span>
+        <a onclick="openPdfDemo()">PDFを開く</a>
+      </div>
+
+      <p class="edit-hint">✏️ 見積書は直接クリックして自由に書き換えできます（宛名・件名・明細・金額など）</p>
+      <div class="estimate" contenteditable="true" spellcheck="false">
+        <div class="doc-title">御見積書</div>
+        <div class="est-head">
+          <div>
+            <div class="est-addressee" id="estAddressee"></div>
+            <div style="margin-top:10px;">下記の通りお見積り申し上げます。</div>
+            <div class="est-total">お見積金額　<span id="estTotalTop"></span>（税込）</div>
+          </div>
+          <div class="est-company">
+            発行日：<span id="estDate"></span><br>
+            注文番号：<span id="estOrderNo"></span><br><br>
+            <span class="co-name">株式会社Grabeaw</span><br>
+            〒320-0814 栃木県宇都宮市三番町1-17 2F<br>
+            TEL：028-614-0088<br>
+            代表取締役：髙木 莉沙<br>
+            登録番号：T8060001035528
+          </div>
+        </div>
+
+        <table class="est-items">
+          <thead>
+            <tr><th>商品名</th><th>内容量</th><th class="num">数量</th><th class="num">単価（税抜）</th><th class="num">金額（税抜）</th></tr>
+          </thead>
+          <tbody id="estItems"></tbody>
+        </table>
+
+        <div class="est-sums">
+          <div><span>小計（税抜）</span><span id="estSubtotal"></span></div>
+          <div><span>消費税（10%）</span><span id="estTax"></span></div>
+          <div class="grand"><span>合計金額</span><span id="estTotal"></span></div>
+        </div>
+
+        <div class="est-note">
+          振込先：GMOあおぞらネット銀行 法人第二営業部　普通 2294361　株式会社Grabeaw第三口座<br>
+          ※本書は自動作成システムのデモ用サンプルです。
+        </div>
+      </div>
+
+      <button class="btn" onclick="showScreen(4)">送信されるメールと管理表を見る</button>
+    </div>
+  </section>
+
+  <!-- ===== 画面4: メール・管理表 ===== -->
+  <section id="screen4" class="hidden">
+    <div class="card">
+      <p class="edit-hint">✏️ メールの件名・本文もクリックして書き換えできます</p>
+      <h2>お客様へ自動送信されるメール<span class="tag customer">顧客宛</span></h2>
+      <div class="mail">
+        <div class="mail-head">
+          <div>宛先：<span id="mailTo" contenteditable="true" spellcheck="false"></span></div>
+          <div class="subject" contenteditable="true" spellcheck="false">件名：御見積書を送付いたします</div>
+        </div>
+        <div class="mail-body" id="mailBody" contenteditable="true" spellcheck="false"></div>
+        <div class="attach">📎 <span id="mailAttach"></span></div>
+      </div>
+
+      <h2>管理者へ届く通知メール<span class="tag admin">管理者宛</span></h2>
+      <div class="mail">
+        <div class="mail-head">
+          <div>宛先：管理者メールアドレス</div>
+          <div class="subject" id="adminSubject" contenteditable="true" spellcheck="false"></div>
+        </div>
+        <div class="mail-body" id="adminBody" contenteditable="true" spellcheck="false"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>スプレッドシートも自動更新されます</h2>
+
+      <div class="sheet-label">■ 注文管理シート</div>
+      <div class="sheet-wrap">
+        <table class="sheet">
+          <thead><tr><th>注文番号</th><th>顧客番号</th><th>お客様名</th><th>注文商品</th><th>税込合計</th><th>注文状況</th><th>見積書PDF</th></tr></thead>
+          <tbody><tr id="orderRow"></tr></tbody>
+        </table>
+      </div>
+
+      <div class="sheet-label">■ 顧客管理シート（初回は新規登録・2回目以降は自動更新）</div>
+      <div class="sheet-wrap">
+        <table class="sheet">
+          <thead><tr><th>顧客番号</th><th>会社名・店舗名</th><th>お客様名</th><th>メールアドレス</th><th>注文回数</th><th>見積書PDF</th></tr></thead>
+          <tbody><tr id="customerRow"></tr></tbody>
+        </table>
+      </div>
+
+      <div class="sheet-label">■ フォーム回答シート</div>
+      <div class="sheet-wrap">
+        <table class="sheet">
+          <thead><tr><th>タイムスタンプ</th><th>お客様名</th><th>処理状況</th><th>注文番号</th><th>見積書PDF</th></tr></thead>
+          <tbody><tr id="formRow"></tr></tbody>
+        </table>
+      </div>
+
+      <button class="btn sub" onclick="resetDemo()">もう一度はじめから試す</button>
+    </div>
+  </section>
+
+</div>
+
+<script>
+  // ===== 商品マスタ（実システムと同じ） =====
+  var PRODUCTS = [
+    { code: 'CY001', name: 'ココユナ Y.リッチ ボディオイル',           volume: '50ml',  price: 2680 },
+    { code: 'CY002', name: 'ココユナ Y.リッチ ヘアオイルトリートメント', volume: '80ml',  price: 6600 },
+    { code: 'CY003', name: 'ココユナ Y.リッチ シャンプー',             volume: '250ml', price: 6600 },
+    { code: 'CY004', name: 'ココユナ Y.リッチ トリートメント',         volume: '250ml', price: 6600 },
+    { code: 'CY005', name: 'ココユナ Y.リッチ クールシャンプー',       volume: '250ml', price: 6600 }
+  ];
+  var TAX_RATE = 0.1;
+
+  // ===== 自動処理ステップ =====
+  var FLOW_STEPS = [
+    ['フォーム回答シートへ追加', 'Googleフォームの回答が自動記録されます'],
+    ['注文番号を発行', '例: GR-20260714-001（日付＋連番で自動採番）'],
+    ['顧客管理へ登録・更新', '初めての方は新規登録、既存の方は注文回数を自動加算'],
+    ['注文管理・注文明細へ登録', '金額・数量・商品内訳を自動計算して記録'],
+    ['帳票入力シートへ反映 → 御見積書シートへ転記', '宛名・明細・金額を自動セット'],
+    ['御見積書シートのみPDF化', 'A4縦・余白小・グリッド線なしで美しく出力'],
+    ['Googleドライブへ保存', '会社名（お名前）＋注文番号のファイル名で保存。同名は自動整理'],
+    ['PDFのURLを各シートへ書き込み', 'フォーム回答・顧客管理・注文管理の3か所へ記録'],
+    ['お客様へ見積書PDFをメール送信', 'テストモード／本番モードを切替可能'],
+    ['管理者へ完了通知', '「〇〇様の見積書を保存しました」']
+  ];
+
+  var state = {};
+
+  function yen(n) { return '¥' + Number(n).toLocaleString('ja-JP'); }
+  function pad(n, len) { return String(n).padStart(len, '0'); }
+
+  function todayStr(sep) {
+    var d = new Date();
+    return d.getFullYear() + sep + pad(d.getMonth() + 1, 2) + sep + pad(d.getDate(), 2);
+  }
+
+  // ===== 初期化: 商品行を生成 =====
+  function initProducts() {
+    var tbody = document.getElementById('productRows');
+    tbody.innerHTML = PRODUCTS.map(function(p, i) {
+      var options = '';
+      for (var q = 0; q <= 10; q++) options += '<option value="' + q + '">' + q + '</option>';
+      var taxIncl = Math.round(p.price * (1 + TAX_RATE));
+      return '<tr>' +
+        '<td>' + p.name + '</td>' +
+        '<td>' + p.volume + '</td>' +
+        '<td class="num">' + yen(taxIncl) + '</td>' +
+        '<td class="num"><select id="qty' + i + '" onchange="updateTotal()">' + options + '</select></td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  function collectItems() {
+    var items = [];
+    PRODUCTS.forEach(function(p, i) {
+      var q = Number(document.getElementById('qty' + i).value);
+      if (q > 0) {
+        var sub = p.price * q;
+        items.push({ name: p.name, volume: p.volume, qty: q, unit: p.price, subtotal: sub });
+      }
+    });
+    return items;
+  }
+
+  function updateTotal() {
+    var items = collectItems();
+    var subtotal = items.reduce(function(s, it) { return s + it.subtotal; }, 0);
+    var total = subtotal + Math.round(subtotal * TAX_RATE);
+    document.getElementById('liveTotal').textContent = yen(total);
+  }
+
+  // ===== 画面切り替え =====
+  function showScreen(n) {
+    for (var i = 1; i <= 4; i++) {
+      document.getElementById('screen' + i).classList.toggle('hidden', i !== n);
+      var tab = document.getElementById('stepTab' + i);
+      tab.classList.remove('active', 'done');
+      if (i < n) tab.classList.add('done');
+      if (i === n) tab.classList.add('active');
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ===== 送信 =====
+  function submitOrder() {
+    var err = document.getElementById('formError');
+    err.style.display = 'none';
+
+    var name = document.getElementById('name').value.trim();
+    var email = document.getElementById('email').value.trim();
+    var items = collectItems();
+
+    var problems = [];
+    if (!name) problems.push('お客様名');
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) problems.push('メールアドレス');
+    if (!items.length) problems.push('商品数量（1点以上）');
+    if (problems.length) {
+      err.textContent = '入力を確認してください：' + problems.join(' / ');
+      err.style.display = 'block';
+      return;
+    }
+
+    var subtotal = items.reduce(function(s, it) { return s + it.subtotal; }, 0);
+    var tax = Math.round(subtotal * TAX_RATE);
+
+    state = {
+      ctype: document.querySelector('input[name=ctype]:checked').value,
+      company: document.getElementById('company').value.trim(),
+      name: name,
+      email: email,
+      payment: document.getElementById('payment').value,
+      items: items,
+      subtotal: subtotal,
+      tax: tax,
+      total: subtotal + tax,
+      orderNo: 'GR-' + todayStr('') + '-001',
+      customerNo: 'C-000001'
+    };
+    state.addressee = state.company ? state.company + ' 御中' : state.name + ' 様';
+    state.fileName = (state.company ? state.company + '御中' : state.name + '様') + '_御見積書_' + state.orderNo + '.pdf';
+
+    showScreen(2);
+    runFlow();
+  }
+
+  // ===== 自動処理アニメーション =====
+  function runFlow() {
+    var list = document.getElementById('flowList');
+    list.innerHTML = FLOW_STEPS.map(function(s, i) {
+      return '<li id="flow' + i + '"><span class="icon">' + (i + 1) + '</span><span>' + s[0] +
+             '<span class="detail">' + s[1] + '</span></span></li>';
+    }).join('');
+
+    var i = 0;
+    function next() {
+      if (i > 0) {
+        var prev = document.getElementById('flow' + (i - 1));
+        prev.classList.remove('running');
+        prev.classList.add('done');
+        prev.querySelector('.icon').textContent = '✓';
+      }
+      if (i >= FLOW_STEPS.length) {
+        document.getElementById('flowNote').textContent = '完了！見積書PDFが作成されました。';
+        setTimeout(function() { renderEstimate(); showScreen(3); }, 700);
+        return;
+      }
+      document.getElementById('flow' + i).classList.add('running');
+      i++;
+      setTimeout(next, 550);
+    }
+    next();
+  }
+
+  // ===== 見積書描画 =====
+  function renderEstimate() {
+    document.getElementById('pdfFileName').textContent = state.fileName;
+    document.getElementById('estAddressee').textContent = state.addressee;
+    document.getElementById('estDate').textContent = todayStr('/');
+    document.getElementById('estOrderNo').textContent = state.orderNo;
+    document.getElementById('estTotalTop').textContent = yen(state.total);
+    document.getElementById('estSubtotal').textContent = yen(state.subtotal);
+    document.getElementById('estTax').textContent = yen(state.tax);
+    document.getElementById('estTotal').textContent = yen(state.total);
+
+    document.getElementById('estItems').innerHTML = state.items.map(function(it) {
+      return '<tr><td>' + it.name + '</td><td>' + it.volume + '</td>' +
+             '<td class="num">' + it.qty + '</td>' +
+             '<td class="num">' + yen(it.unit) + '</td>' +
+             '<td class="num">' + yen(it.subtotal) + '</td></tr>';
+    }).join('');
+
+    renderScreen4();
+  }
+
+  // ===== メール・管理表描画 =====
+  function renderScreen4() {
+    document.getElementById('mailTo').textContent = state.email;
+    document.getElementById('mailBody').textContent =
+      state.addressee + '\n\nこの度はお問い合わせありがとうございます。\n\n御見積書を送付いたします。\n\nご確認よろしくお願いいたします。';
+    document.getElementById('mailAttach').textContent = state.fileName;
+
+    var dispName = state.company || state.name;
+    document.getElementById('adminSubject').textContent = '件名：' + dispName + '様の見積書を保存しました';
+    document.getElementById('adminBody').textContent =
+      '見積書PDFを保存しました。\n\n注文番号: ' + state.orderNo +
+      '\n会社名・店舗名: ' + (state.company || '（なし）') +
+      '\nお客様名: ' + state.name +
+      '\n見積金額: ' + yen(state.total) +
+      '\nファイル名: ' + state.fileName +
+      '\nPDF URL: https://drive.google.com/...（自動発行）';
+
+    var pdfLink = '<a onclick="openPdfDemo()">PDFを開く</a>';
+    var pdfUrlLink = '<a onclick="openPdfDemo()">https://drive.google.com/...</a>';
+
+    var itemSummary = state.items.map(function(it) { return it.name.replace('ココユナ Y.リッチ ', '') + ' x' + it.qty; }).join(', ');
+    document.getElementById('orderRow').innerHTML =
+      '<td>' + state.orderNo + '</td><td>' + state.customerNo + '</td><td>' + state.name + '</td>' +
+      '<td>' + itemSummary + '</td><td>' + yen(state.total) + '</td><td>新規受付</td><td class="link">' + pdfLink + '</td>';
+
+    document.getElementById('customerRow').innerHTML =
+      '<td>' + state.customerNo + '</td><td>' + (state.company || '') + '</td><td>' + state.name + '</td>' +
+      '<td>' + state.email + '</td><td>1</td><td class="link">' + pdfUrlLink + '</td>';
+
+    var now = new Date();
+    document.getElementById('formRow').innerHTML =
+      '<td>' + todayStr('/') + ' ' + pad(now.getHours(), 2) + ':' + pad(now.getMinutes(), 2) + '</td>' +
+      '<td>' + state.name + '</td><td>処理済み</td><td>' + state.orderNo + '</td><td class="link">' + pdfUrlLink + '</td>';
+  }
+
+  // ===== PDF風の別タブで見積書を開く（デモ用） =====
+  // 実システムではGoogleドライブの実PDFが開く。デモには実ファイルが無いため、
+  // 現在の見積書プレビュー（編集内容も反映）をPDFビューア風の新しいタブで表示する。
+  function openPdfDemo() {
+    var est = document.querySelector('.estimate');
+    if (!est || !state.fileName) { alert('先に注文フォームを送信してください。'); return; }
+    var css = document.querySelector('style').textContent;
+    var w = window.open('', '_blank');
+    if (!w) { alert('ポップアップがブロックされました。ブラウザの設定で許可してください。'); return; }
+    var estHtml = est.outerHTML.replace(/ contenteditable="true"/g, '');
+    w.document.write(
+      '<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8">' +
+      '<title>' + state.fileName + '</title>' +
+      '<style>' + css +
+      ' body{background:#525659;padding:26px 10px;}' +
+      ' .pdf-bar{max-width:660px;margin:0 auto 14px;color:#fff;font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}' +
+      ' .pdf-bar button{background:#088070;color:#fff;border:none;border-radius:6px;padding:9px 16px;cursor:pointer;font-size:13px;font-weight:bold;}' +
+      ' .pdf-page{background:#fff;max-width:660px;margin:0 auto;box-shadow:0 4px 18px rgba(0,0,0,.45);padding:10px;}' +
+      ' @media print{ body{background:#fff;padding:0;} .pdf-bar{display:none;} .pdf-page{box-shadow:none;max-width:none;} }' +
+      '</style></head><body>' +
+      '<div class="pdf-bar"><span>📄 ' + state.fileName + '</span>' +
+      '<button onclick="window.print()">印刷 / PDFとして保存</button></div>' +
+      '<div class="pdf-page">' + estHtml + '</div>' +
+      '</body></html>'
+    );
+    w.document.close();
+  }
+
+  // ===== リセット =====
+  function resetDemo() {
+    document.getElementById('company').value = '';
+    document.getElementById('name').value = '';
+    document.getElementById('email').value = '';
+    PRODUCTS.forEach(function(_, i) { document.getElementById('qty' + i).value = 0; });
+    updateTotal();
+    showScreen(1);
+  }
+
+  initProducts();
+  updateTotal();
+</script>
+</body>
+</html>
