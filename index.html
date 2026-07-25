@@ -531,7 +531,7 @@
         <label>ご希望サービス（数量を選択）<span class="req">1点以上</span></label>
         <table class="products">
           <thead>
-            <tr><th>商品名</th><th>単位</th><th class="num">税込単価</th><th class="num">数量</th></tr>
+            <tr><th>商品名</th><th>単位</th><th class="num">税抜単価</th><th class="num">数量</th></tr>
           </thead>
           <tbody id="productRows"></tbody>
         </table>
@@ -548,7 +548,7 @@
               <input type="text" id="customUnit" placeholder="例）1セット">
             </div>
             <div class="mini-field">
-              <span class="mini-label">税込単価</span>
+              <span class="mini-label">税抜単価</span>
               <input type="text" id="customPrice" placeholder="例）30000">
             </div>
             <button type="button" class="mini-button" onclick="addCustomProduct()">追加</button>
@@ -559,14 +559,22 @@
 
       <div class="summary-box">
         <div class="summary-row">
-          <span>割引額（税込）</span>
+          <span>割引額（税抜）</span>
           <div class="discount-input">
             <span>¥</span>
             <input type="text" id="discount" value="0" inputmode="numeric" oninput="updateTotal()">
           </div>
         </div>
+        <div class="summary-row">
+          <span>小計（税抜）</span>
+          <strong id="liveSubtotal">¥0</strong>
+        </div>
+        <div class="summary-row">
+          <span>消費税（10%）</span>
+          <strong id="liveTax">¥0</strong>
+        </div>
         <div class="total-box">
-          <span>ご注文金額（税込）</span>
+          <span>合計金額（税込）</span>
           <strong id="liveTotal">¥0</strong>
         </div>
       </div>
@@ -624,8 +632,8 @@
         <div class="est-sums">
           <div><span>小計（税抜）</span><span id="estSubtotal"></span></div>
           <div><span>消費税（10%）</span><span id="estTax"></span></div>
-          <div><span>割引（税込）</span><span id="estDiscount"></span></div>
-          <div class="grand"><span>合計金額</span><span id="estTotal"></span></div>
+          <div><span>割引（税抜）</span><span id="estDiscount"></span></div>
+          <div class="grand"><span>合計金額（税込）</span><span id="estTotal"></span></div>
         </div>
 
         <div class="est-note">
@@ -667,7 +675,7 @@
       <div class="sheet-label">■ 注文管理シート</div>
       <div class="sheet-wrap">
         <table class="sheet">
-          <thead><tr><th>注文番号</th><th>顧客番号</th><th>お客様名</th><th>注文商品</th><th>税込合計</th><th>注文状況</th><th>見積書PDF</th></tr></thead>
+          <thead><tr><th>注文番号</th><th>顧客番号</th><th>お客様名</th><th>注文商品</th><th>合計金額（税込）</th><th>注文状況</th><th>見積書PDF</th></tr></thead>
           <tbody><tr id="orderRow"></tr></tbody>
         </table>
       </div>
@@ -695,35 +703,35 @@
 
 <script>
   var PRODUCTS = [
-    { code: "NSL001", name: "領収書LINE Bot", unit: "1ID", priceIncl: 8000 },
-    { code: "NSL002", name: "LINE名刺管理Bot", unit: "1ID", priceIncl: 8000 },
-    { code: "NSL003", name: "LINE/領収書", unit: "1セット", priceIncl: 15000 },
-    { code: "NSL004", name: "公式LINE制作", unit: "1ID", priceIncl: 20000 },
-    { code: "NSL005", name: "社員名簿管理Bot10名", unit: "1件", priceIncl: 10000 },
-    { code: "NSL006", name: "勤怠管理 出退勤のみ", unit: "1件", priceIncl: 20000 },
-    { code: "NSL007", name: "勤怠管理自動・シフト", unit: "1件", priceIncl: 50000 },
-    { code: "NSL008", name: "リンク設定", unit: "1件", priceIncl: 10000 },
-    { code: "NSL009", name: "シフト表自動化", unit: "1ID", priceIncl: 20000 },
-    { code: "NSL010", name: "予約システム", unit: "1ID", priceIncl: 20000 },
-    { code: "NSL011", name: "リッチメニュー", unit: "1ID", priceIncl: 10000 },
-    { code: "NSL012", name: "公式LINE一式", unit: "1件", priceIncl: 160000 },
-    { code: "NSL013", name: "議事録", unit: "1件", priceIncl: 20000 },
-    { code: "NSL014", name: "LINEAI仮社員Bot", unit: "1件", priceIncl: 50000 },
-    { code: "NSL015", name: "WEB+LINE用AI管理職Bot", unit: "1件", priceIncl: 100000 },
-    { code: "NSL016", name: "保守無し", unit: "1件", priceIncl: 30000 },
-    { code: "NSL017", name: "名刺読込", unit: "1枚", priceIncl: 20 },
-    { code: "NSL018", name: "画像取込", unit: "1枚", priceIncl: 20 },
-    { code: "NSL019", name: "建築間取り", unit: "1件", priceIncl: 50000 },
-    { code: "NSL020", name: "建築業務自動化", unit: "1件", priceIncl: 100000 },
-    { code: "NSL021", name: "作業見えるか", unit: "1件", priceIncl: 50000 },
-    { code: "NSL022", name: "建築管理職AI自動化", unit: "1件", priceIncl: 200000 },
-    { code: "NSL023", name: "業務AI効率化", unit: "1セット", priceIncl: 50000 },
-    { code: "NSL024", name: "エクセルの自動化", unit: "1ファイル", priceIncl: 20000 },
-    { code: "NSL025", name: "Googleフォーム制作", unit: "1ファイル", priceIncl: 10000 },
-    { code: "NSL026", name: "スプレッドシートシート制作", unit: "1シート", priceIncl: 5000 },
-    { code: "NSL027", name: "ピン打ち制作", unit: "1件", priceIncl: 60000 },
-    { code: "NSL028", name: "ピン打ち自動化", unit: "1件", priceIncl: 250000 },
-    { code: "NSL029", name: "公式LINE制作＋システム", unit: "1件", priceIncl: 200000 }
+    { code: "NSL001", name: "領収書LINE Bot", unit: "1ID", priceEx: 8000 },
+    { code: "NSL002", name: "LINE名刺管理Bot", unit: "1ID", priceEx: 8000 },
+    { code: "NSL003", name: "LINE/領収書", unit: "1セット", priceEx: 15000 },
+    { code: "NSL004", name: "公式LINE制作", unit: "1ID", priceEx: 20000 },
+    { code: "NSL005", name: "社員名簿管理Bot10名", unit: "1件", priceEx: 10000 },
+    { code: "NSL006", name: "勤怠管理 出退勤のみ", unit: "1件", priceEx: 20000 },
+    { code: "NSL007", name: "勤怠管理自動・シフト", unit: "1件", priceEx: 50000 },
+    { code: "NSL008", name: "リンク設定", unit: "1件", priceEx: 10000 },
+    { code: "NSL009", name: "シフト表自動化", unit: "1ID", priceEx: 20000 },
+    { code: "NSL010", name: "予約システム", unit: "1ID", priceEx: 20000 },
+    { code: "NSL011", name: "リッチメニュー", unit: "1ID", priceEx: 10000 },
+    { code: "NSL012", name: "公式LINE一式", unit: "1件", priceEx: 160000 },
+    { code: "NSL013", name: "議事録", unit: "1件", priceEx: 20000 },
+    { code: "NSL014", name: "LINEAI仮社員Bot", unit: "1件", priceEx: 50000 },
+    { code: "NSL015", name: "WEB+LINE用AI管理職Bot", unit: "1件", priceEx: 100000 },
+    { code: "NSL016", name: "保守無し", unit: "1件", priceEx: 30000 },
+    { code: "NSL017", name: "名刺読込", unit: "1枚", priceEx: 20 },
+    { code: "NSL018", name: "画像取込", unit: "1枚", priceEx: 20 },
+    { code: "NSL019", name: "建築間取り", unit: "1件", priceEx: 50000 },
+    { code: "NSL020", name: "建築業務自動化", unit: "1件", priceEx: 100000 },
+    { code: "NSL021", name: "作業見えるか", unit: "1件", priceEx: 50000 },
+    { code: "NSL022", name: "建築管理職AI自動化", unit: "1件", priceEx: 200000 },
+    { code: "NSL023", name: "業務AI効率化", unit: "1セット", priceEx: 50000 },
+    { code: "NSL024", name: "エクセルの自動化", unit: "1ファイル", priceEx: 20000 },
+    { code: "NSL025", name: "Googleフォーム制作", unit: "1ファイル", priceEx: 10000 },
+    { code: "NSL026", name: "スプレッドシートシート制作", unit: "1シート", priceEx: 5000 },
+    { code: "NSL027", name: "ピン打ち制作", unit: "1件", priceEx: 60000 },
+    { code: "NSL028", name: "ピン打ち自動化", unit: "1件", priceEx: 250000 },
+    { code: "NSL029", name: "公式LINE制作＋システム", unit: "1件", priceEx: 200000 }
   ];
   var TAX_RATE = 0.1;
   var customProducts = [];
@@ -753,8 +761,8 @@
     return d.getFullYear() + sep + pad(d.getMonth() + 1, 2) + sep + pad(d.getDate(), 2);
   }
 
-  function taxExclusive(priceIncl) {
-    return Math.round(priceIncl / (1 + TAX_RATE));
+  function calcTax(amountEx) {
+    return Math.round(amountEx * TAX_RATE);
   }
 
   function initProducts() {
@@ -765,7 +773,7 @@
       return "<tr>" +
         "<td>" + p.name + "</td>" +
         "<td>" + p.unit + "</td>" +
-        '<td class="num">' + yen(p.priceIncl) + "</td>" +
+        '<td class="num">' + yen(p.priceEx) + "</td>" +
         '<td class="num"><select id="qty' + i + '" onchange="updateTotal()">' + options + "</select></td>" +
         "</tr>";
     }).join("");
@@ -781,7 +789,7 @@
       return '<div class="custom-row">' +
         "<strong>" + item.name + "</strong>" +
         "<span>" + item.unit + "</span>" +
-        '<span class="num">' + yen(item.priceIncl) + "</span>" +
+        '<span class="num">' + yen(item.priceEx) + "</span>" +
         '<span>数量 ' + item.qty + "</span>" +
         '<button type="button" class="remove-btn" onclick="removeCustomProduct(' + index + ')">削除</button>' +
         "</div>";
@@ -791,9 +799,9 @@
   function addCustomProduct() {
     var name = document.getElementById("customName").value.trim();
     var unit = document.getElementById("customUnit").value.trim() || "1件";
-    var priceIncl = parseMoney(document.getElementById("customPrice").value);
-    if (!name || priceIncl <= 0) {
-      alert("新商品は商品名と税込単価を入れてください。");
+    var priceEx = parseMoney(document.getElementById("customPrice").value);
+    if (!name || priceEx <= 0) {
+      alert("新商品は商品名と税抜単価を入れてください。");
       return;
     }
     customProducts.push({
@@ -801,7 +809,7 @@
       name: name,
       unit: unit,
       qty: 1,
-      priceIncl: priceIncl
+      priceEx: priceEx
     });
     document.getElementById("customName").value = "";
     document.getElementById("customUnit").value = "";
@@ -821,26 +829,30 @@
     PRODUCTS.forEach(function(p, i) {
       var qty = Number(document.getElementById("qty" + i).value);
       if (qty > 0) {
-        var unitEx = taxExclusive(p.priceIncl);
+        var unitEx = p.priceEx;
+        var tax = calcTax(unitEx * qty);
         items.push({
           name: p.name,
           unit: p.unit,
           qty: qty,
           unitEx: unitEx,
           subtotalEx: unitEx * qty,
-          subtotalIncl: p.priceIncl * qty
+          tax: tax,
+          subtotalIncl: unitEx * qty + tax
         });
       }
     });
     customProducts.forEach(function(p) {
-      var unitEx = taxExclusive(p.priceIncl);
+      var unitEx = p.priceEx;
+      var tax = calcTax(unitEx * p.qty);
       items.push({
         name: p.name,
         unit: p.unit,
         qty: p.qty,
         unitEx: unitEx,
         subtotalEx: unitEx * p.qty,
-        subtotalIncl: p.priceIncl * p.qty
+        tax: tax,
+        subtotalIncl: unitEx * p.qty + tax
       });
     });
     return items;
@@ -848,11 +860,16 @@
 
   function updateTotal() {
     var items = collectItems();
-    var gross = items.reduce(function(sum, item) { return sum + item.subtotalIncl; }, 0);
+    var subtotal = items.reduce(function(sum, item) { return sum + item.subtotalEx; }, 0);
+    var tax = items.reduce(function(sum, item) { return sum + item.tax; }, 0);
     var discount = parseMoney(document.getElementById("discount").value);
     if (discount < 0) discount = 0;
-    if (discount > gross) discount = gross;
-    var total = gross - discount;
+    if (discount > subtotal) discount = subtotal;
+    var discountedSubtotal = subtotal - discount;
+    var discountedTax = calcTax(discountedSubtotal);
+    var total = discountedSubtotal + discountedTax;
+    document.getElementById("liveSubtotal").textContent = yen(discountedSubtotal);
+    document.getElementById("liveTax").textContent = yen(discountedTax);
     document.getElementById("liveTotal").textContent = yen(total);
   }
 
@@ -887,11 +904,11 @@
     }
 
     var subtotal = items.reduce(function(sum, item) { return sum + item.subtotalEx; }, 0);
-    var gross = items.reduce(function(sum, item) { return sum + item.subtotalIncl; }, 0);
     if (discount < 0) discount = 0;
-    if (discount > gross) discount = gross;
-    var total = gross - discount;
-    var tax = gross - subtotal;
+    if (discount > subtotal) discount = subtotal;
+    var discountedSubtotal = subtotal - discount;
+    var tax = calcTax(discountedSubtotal);
+    var total = discountedSubtotal + tax;
 
     state = {
       ctype: document.querySelector("input[name=ctype]:checked").value,
@@ -900,10 +917,9 @@
       email: email,
       payment: document.getElementById("payment").value,
       items: items,
-      subtotal: subtotal,
+      subtotal: discountedSubtotal,
       tax: tax,
       discount: discount,
-      gross: gross,
       total: total,
       orderNo: "NSL-" + todayStr("") + "-001",
       customerNo: "C-000001"
@@ -975,7 +991,7 @@
       "見積書PDFを保存しました。\n\n注文番号: " + state.orderNo +
       "\n会社名・店舗名: " + (state.company || "（なし）") +
       "\nお客様名: " + state.name +
-      "\n割引額: " + yen(state.discount) +
+      "\n割引額（税抜）: " + yen(state.discount) +
       "\n見積金額: " + yen(state.total) +
       "\nファイル名: " + state.fileName +
       "\n連絡先: " + state.email +
