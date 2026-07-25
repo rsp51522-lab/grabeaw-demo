@@ -281,6 +281,12 @@
   .btn:hover { background: var(--main-dark); }
   .btn.sub { background: #fff; color: var(--main); border: 2px solid var(--main); }
   .btn.sub:hover { background: var(--main-light); }
+  .btn-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 16px;
+  }
   .error-msg { color: var(--red); font-size: 13px; margin-top: 10px; display: none; }
   .flow { list-style: none; }
   .flow li {
@@ -590,6 +596,7 @@
       <h2>フォーム送信後、システムが自動で処理します</h2>
       <ul class="flow" id="flowList"></ul>
       <p class="note center" id="flowNote">処理中…（実際の所要時間は約30秒〜1分です）</p>
+      <button class="btn sub" type="button" onclick="showScreen(1)">戻る</button>
     </div>
   </section>
 
@@ -642,7 +649,10 @@
         </div>
       </div>
 
-      <button class="btn" onclick="showScreen(4)">送信されるメールと管理表を見る</button>
+      <div class="btn-row">
+        <button class="btn sub" type="button" onclick="showScreen(1)">戻る</button>
+        <button class="btn" type="button" onclick="showScreen(4)">送信されるメールと管理表を見る</button>
+      </div>
     </div>
   </section>
 
@@ -696,7 +706,10 @@
         </table>
       </div>
 
-      <button class="btn sub" onclick="resetDemo()">もう一度はじめから試す</button>
+      <div class="btn-row">
+        <button class="btn sub" type="button" onclick="showScreen(3)">戻る</button>
+        <button class="btn sub" type="button" onclick="resetDemo()">もう一度はじめから試す</button>
+      </div>
     </div>
   </section>
 </div>
