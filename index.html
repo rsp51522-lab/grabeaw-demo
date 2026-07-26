@@ -776,6 +776,31 @@
     return Math.round(amountEx * TAX_RATE);
   }
 
+  function normalizeCtype(value) {
+    var raw = String(value || "").trim();
+    if (!raw) return "";
+    if (raw === "個人") return "個人";
+    if (raw === "法人") return "法人";
+    if (raw === "店舗" || raw === "サロン・店舗" || raw === "サロン" || raw === "店") return "店舗";
+    return "";
+  }
+
+  function applyUrlPrefill() {
+    var params = new URLSearchParams(window.location.search);
+    var ctype = normalizeCtype(params.get("ctype"));
+    var company = (params.get("company") || "").trim();
+    var name = (params.get("name") || "").trim();
+    var email = (params.get("email") || "").trim();
+
+    if (ctype) {
+      var radio = document.querySelector('input[name="ctype"][value="' + ctype + '"]');
+      if (radio) radio.checked = true;
+    }
+    if (company) document.getElementById("company").value = company;
+    if (name) document.getElementById("name").value = name;
+    if (email) document.getElementById("email").value = email;
+  }
+
   function initProducts() {
     var tbody = document.getElementById("productRows");
     tbody.innerHTML = PRODUCTS.map(function(p, i) {
@@ -1070,6 +1095,7 @@
   }
 
   initProducts();
+  applyUrlPrefill();
   renderCustomProducts();
   updateTotal();
 </script>
