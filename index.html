@@ -907,6 +907,7 @@
 
 <script>
   var MAIL_API_STORAGE_KEY = "nslMailApiUrl";
+  var DEFAULT_MAIL_API_URL = "https://script.google.com/macros/s/AKfycby1_XLhpxeY8wbnbwZiNSZYCVCHPwxqRvZ3GLbAzTZVouCPvks7e9rAwQ4cKcKr_Mwy/exec";
   var pendingMailTarget = "";
   var pendingMailTimer = 0;
   var PRODUCTS = [
@@ -996,6 +997,9 @@
     var apiUrl = (params.get("mailApi") || params.get("api") || "").trim();
     if (!apiUrl && typeof window !== "undefined" && window.localStorage) {
       apiUrl = window.localStorage.getItem(MAIL_API_STORAGE_KEY) || "";
+    }
+    if (!apiUrl) {
+      apiUrl = DEFAULT_MAIL_API_URL;
     }
     var input = document.getElementById("mailApiUrl");
     if (input) input.value = apiUrl;
