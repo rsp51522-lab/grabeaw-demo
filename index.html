@@ -766,6 +766,7 @@
   var state = {};
 
   function yen(n) { return "¥" + Number(n).toLocaleString("ja-JP"); }
+  function yenDiscount(n) { return "-" + yen(n); }
   function pad(n, len) { return String(n).padStart(len, "0"); }
   function parseMoney(text) {
     var cleaned = String(text || "").replace(/[^\d-]/g, "");
@@ -1011,7 +1012,7 @@
     document.getElementById("estTotalTop").textContent = yen(state.total);
     document.getElementById("estSubtotal").textContent = yen(state.subtotal);
     document.getElementById("estTax").textContent = yen(state.tax);
-    document.getElementById("estDiscount").textContent = yen(state.discount);
+    document.getElementById("estDiscount").textContent = yenDiscount(state.discount);
     document.getElementById("estTotal").textContent = yen(state.total);
 
     document.getElementById("estItems").innerHTML = state.items.map(function(item) {
@@ -1036,7 +1037,7 @@
       "見積書PDFを保存しました。\n\n注文番号: " + state.orderNo +
       "\n会社名・店舗名: " + (state.company || "（なし）") +
       "\nお客様名: " + state.name +
-      "\n割引額（税抜）: " + yen(state.discount) +
+      "\n割引額（税抜）: " + yenDiscount(state.discount) +
       "\n見積金額: " + yen(state.total) +
       "\nファイル名: " + state.fileName +
       "\n連絡先: " + state.email +
