@@ -101,6 +101,24 @@
   .step.active .num { background: var(--main); }
   .step.done { color: var(--green); border-color: var(--green); }
   .step.done .num { background: var(--green); }
+  .top-home-row {
+    display: flex;
+    justify-content: flex-end;
+    margin: 4px 0 14px;
+  }
+  .top-home-btn {
+    border: 1px solid #bfdbfe;
+    background: #eff6ff;
+    color: var(--main-dark);
+    border-radius: 999px;
+    padding: 9px 16px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .top-home-btn:hover {
+    background: #dbeafe;
+  }
   .card {
     background: var(--card);
     border: 1px solid var(--border);
@@ -433,6 +451,78 @@
   }
   .tag.customer { background: var(--green-light); color: var(--green); }
   .tag.admin { background: #fee2e2; color: var(--red); }
+  .send-state {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: bold;
+    border-radius: 999px;
+    padding: 3px 10px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+  .send-state.waiting { background: #fef3c7; color: #92400e; }
+  .send-state.sent { background: #dcfce7; color: #166534; }
+  .mail-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 18px;
+  }
+  .mail-summary-text {
+    font-size: 13px;
+    color: #1e3a8a;
+    line-height: 1.6;
+  }
+  .mail-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    padding: 0 14px 14px;
+  }
+  .mail-status-note { font-size: 12px; color: #4b5563; }
+  .btn.small {
+    width: auto;
+    min-width: 220px;
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+  .home-fab {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    width: 84px;
+    height: 84px;
+    border: none;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #56b4ff, #1677d8);
+    box-shadow: 0 12px 28px rgba(22, 119, 216, 0.32);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 50;
+    transition: transform .2s ease, box-shadow .2s ease;
+  }
+  .home-fab:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 30px rgba(22, 119, 216, 0.36);
+  }
+  .home-fab svg {
+    width: 36px;
+    height: 36px;
+    stroke: #fff;
+    fill: none;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
   .sheet-wrap { overflow-x: auto; }
   table.sheet { border-collapse: collapse; font-size: 11px; white-space: nowrap; }
   table.sheet th, table.sheet td { border: 1px solid #cbd5e1; padding: 5px 8px; }
@@ -475,6 +565,16 @@
     .custom-row { grid-template-columns: 1fr; }
     .discount-input { width: 100%; justify-content: space-between; }
     .discount-input input { width: 120px; }
+    .home-fab {
+      width: 72px;
+      height: 72px;
+      right: 16px;
+      bottom: 16px;
+    }
+    .home-fab svg {
+      width: 32px;
+      height: 32px;
+    }
   }
 </style>
 </head>
@@ -494,6 +594,9 @@
 </header>
 
 <div class="wrap">
+  <div class="top-home-row">
+    <button class="top-home-btn" type="button" onclick="goToolboxHome()">ホームに戻る</button>
+  </div>
   <div class="steps">
     <div class="step active" id="stepTab1"><span class="num">1</span>注文フォーム</div>
     <div class="step" id="stepTab2"><span class="num">2</span>自動処理</div>
@@ -661,23 +764,36 @@
   <section id="screen4" class="hidden">
     <div class="card">
       <p class="edit-hint">✏️ メールの件名・本文もクリックして書き換えできます</p>
-      <h2>お客様へ自動送信されるメール<span class="tag customer">顧客宛</span></h2>
+      <div class="mail-summary">
+        <div class="mail-summary-text" id="mailSummaryText">この時点では、まだメールは送っていません。下の送信ボタンを押すと、送信済み表示に変わります。</div>
+        <button class="btn small" type="button" id="sendAllBtn" onclick="sendMailDemo('all')">2通まとめて送信する</button>
+      </div>
+
+      <h2>お客様へ自動送信されるメール<span class="tag customer">顧客宛</span><span class="send-state waiting" id="customerSendState">未送信</span></h2>
       <div class="mail">
         <div class="mail-head">
           <div>宛先：<span id="mailTo" contenteditable="true" spellcheck="false"></span></div>
-          <div class="subject" contenteditable="true" spellcheck="false">件名：NSL相談所より御見積書を送付いたします</div>
+          <div class="subject" id="customerSubject" contenteditable="true" spellcheck="false">件名：NSL相談所より御見積書を送付いたします</div>
         </div>
         <div class="mail-body" id="mailBody" contenteditable="true" spellcheck="false"></div>
         <div class="attach">📎 <span id="mailAttach"></span></div>
+        <div class="mail-actions">
+          <button class="btn small" type="button" id="customerSendBtn" onclick="sendMailDemo('customer')">この内容で顧客メールを送信</button>
+          <div class="mail-status-note" id="customerSendNote">まだ送信していません。</div>
+        </div>
       </div>
 
-      <h2>管理者へ届く通知メール<span class="tag admin">管理者宛</span></h2>
+      <h2>管理者へ届く通知メール<span class="tag admin">管理者宛</span><span class="send-state waiting" id="adminSendState">未送信</span></h2>
       <div class="mail">
         <div class="mail-head">
           <div>宛先：asano@nextsaleslab.com</div>
           <div class="subject" id="adminSubject" contenteditable="true" spellcheck="false"></div>
         </div>
         <div class="mail-body" id="adminBody" contenteditable="true" spellcheck="false"></div>
+        <div class="mail-actions">
+          <button class="btn small" type="button" id="adminSendBtn" onclick="sendMailDemo('admin')">この内容で管理者通知を送信</button>
+          <div class="mail-status-note" id="adminSendNote">まだ送信していません。</div>
+        </div>
       </div>
     </div>
 
@@ -716,6 +832,14 @@
   </section>
 </div>
 
+<button type="button" class="home-fab hidden" id="homeFab" aria-label="ホームへ戻る" onclick="goToolboxHome()">
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M4 10.5 12 4l8 6.5"></path>
+    <path d="M6.5 9.5V20h11V9.5"></path>
+    <path d="M10 20v-5h4v5"></path>
+  </svg>
+</button>
+
 <script>
   var PRODUCTS = [
     { code: "NSL001", name: "領収書LINE Bot", unit: "1ID", priceEx: 8000 },
@@ -750,6 +874,7 @@
     { code: "NSL030", name: "注文・見積・領収書自動作成", unit: "1件", priceEx: 30000 }
   ];
   var TAX_RATE = 0.1;
+  var TOOLBOX_HOME_BASE = "https://business-card-line-app-nsl.vercel.app/";
   var customProducts = [];
   var FLOW_STEPS = [
     ["フォーム回答シートへ追加", "お客様情報と希望サービスを自動記録します"],
@@ -927,7 +1052,40 @@
       if (i < n) tab.classList.add("done");
       if (i === n) tab.classList.add("active");
     }
+    updateHomeButtonVisibility(n);
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function updateHomeButtonVisibility(screenNo) {
+    var btn = document.getElementById("homeFab");
+    if (!btn) return;
+    btn.classList.toggle("hidden", !(screenNo === 3 || screenNo === 4));
+  }
+
+  function getToolboxHomeUrl() {
+    var params = new URLSearchParams(window.location.search);
+    var home = (params.get("home") || "").trim();
+    if (home) return home;
+
+    var token = (params.get("token") || "").trim();
+    if (token) return TOOLBOX_HOME_BASE + "?token=" + encodeURIComponent(token);
+
+    if (document.referrer) {
+      try {
+        var refUrl = new URL(document.referrer);
+        if (refUrl.hostname === "business-card-line-app-nsl.vercel.app") {
+          var refToken = (refUrl.searchParams.get("token") || "").trim();
+          return refToken
+            ? TOOLBOX_HOME_BASE + "?token=" + encodeURIComponent(refToken)
+            : TOOLBOX_HOME_BASE;
+        }
+      } catch (e) {}
+    }
+    return TOOLBOX_HOME_BASE;
+  }
+
+  function goToolboxHome() {
+    window.location.href = getToolboxHomeUrl();
   }
 
   function submitOrder() {
@@ -1049,7 +1207,7 @@
 
     document.getElementById("orderRow").innerHTML =
       "<td>" + state.orderNo + "</td><td>" + state.customerNo + "</td><td>" + state.name + "</td>" +
-      "<td>" + itemSummary + "</td><td>" + yen(state.total) + "</td><td>新規受付</td><td class=\"link\">" + pdfLink + "</td>";
+      "<td>" + itemSummary + "</td><td>" + yen(state.total) + "</td><td id=\"orderStatusCell\">新規受付</td><td class=\"link\">" + pdfLink + "</td>";
 
     document.getElementById("customerRow").innerHTML =
       "<td>" + state.customerNo + "</td><td>" + (state.company || "") + "</td><td>" + state.name + "</td>" +
@@ -1058,7 +1216,99 @@
     var now = new Date();
     document.getElementById("formRow").innerHTML =
       "<td>" + todayStr("/") + " " + pad(now.getHours(), 2) + ":" + pad(now.getMinutes(), 2) + "</td>" +
-      "<td>" + state.name + "</td><td>処理済み</td><td>" + state.orderNo + "</td><td class=\"link\">" + pdfUrlLink + "</td>";
+      "<td>" + state.name + "</td><td id=\"formStatusCell\">処理済み</td><td>" + state.orderNo + "</td><td class=\"link\">" + pdfUrlLink + "</td>";
+
+    renderMailStatus();
+  }
+
+  function formatDateTime(date) {
+    return date.getFullYear() + "/" + pad(date.getMonth() + 1, 2) + "/" + pad(date.getDate(), 2) + " " +
+      pad(date.getHours(), 2) + ":" + pad(date.getMinutes(), 2);
+  }
+
+  function ensureMailStatus() {
+    if (!state.mailStatus) {
+      state.mailStatus = {
+        customerSentAt: "",
+        adminSentAt: ""
+      };
+    }
+  }
+
+  function renderMailStatus() {
+    ensureMailStatus();
+
+    var customerSent = !!state.mailStatus.customerSentAt;
+    var adminSent = !!state.mailStatus.adminSentAt;
+
+    document.getElementById("customerSendState").textContent = customerSent ? "送信済み" : "未送信";
+    document.getElementById("customerSendState").className = "send-state " + (customerSent ? "sent" : "waiting");
+    document.getElementById("adminSendState").textContent = adminSent ? "送信済み" : "未送信";
+    document.getElementById("adminSendState").className = "send-state " + (adminSent ? "sent" : "waiting");
+
+    document.getElementById("customerSendNote").textContent = customerSent
+      ? "送信時刻：" + state.mailStatus.customerSentAt + "（デモ表示）"
+      : "まだ送信していません。";
+    document.getElementById("adminSendNote").textContent = adminSent
+      ? "送信時刻：" + state.mailStatus.adminSentAt + "（デモ表示）"
+      : "まだ送信していません。";
+
+    document.getElementById("customerSendBtn").textContent = customerSent
+      ? "もう一度 顧客メールを送信"
+      : "この内容で顧客メールを送信";
+    document.getElementById("adminSendBtn").textContent = adminSent
+      ? "もう一度 管理者通知を送信"
+      : "この内容で管理者通知を送信";
+
+    if (customerSent && adminSent) {
+      document.getElementById("mailSummaryText").textContent = "顧客メールと管理者通知は送信済みです。必要なら下のボタンで再送できます。";
+      document.getElementById("sendAllBtn").textContent = "2通まとめて再送信する";
+    } else if (customerSent || adminSent) {
+      document.getElementById("mailSummaryText").textContent = "一部だけ送信済みです。残り1通を送るか、まとめて再送信できます。";
+      document.getElementById("sendAllBtn").textContent = "2通まとめて送信する";
+    } else {
+      document.getElementById("mailSummaryText").textContent = "この時点では、まだメールは送っていません。下の送信ボタンを押すと、送信済み表示に変わります。";
+      document.getElementById("sendAllBtn").textContent = "2通まとめて送信する";
+    }
+
+    updateSheetStatuses();
+  }
+
+  function updateSheetStatuses() {
+    if (!state || !state.orderNo) return;
+    ensureMailStatus();
+
+    var customerSent = !!state.mailStatus.customerSentAt;
+    var adminSent = !!state.mailStatus.adminSentAt;
+    var orderStatus = "新規受付";
+    var formStatus = "処理済み";
+
+    if (customerSent && adminSent) {
+      orderStatus = "メール送信済み";
+      formStatus = "送信完了";
+    } else if (customerSent || adminSent) {
+      orderStatus = "一部送信済み";
+      formStatus = "一部送信済み";
+    }
+
+    var orderStatusCell = document.getElementById("orderStatusCell");
+    var formStatusCell = document.getElementById("formStatusCell");
+    if (orderStatusCell) orderStatusCell.textContent = orderStatus;
+    if (formStatusCell) formStatusCell.textContent = formStatus;
+  }
+
+  function sendMailDemo(target) {
+    ensureMailStatus();
+    var sentAt = formatDateTime(new Date());
+
+    if (target === "customer" || target === "all") {
+      state.mailStatus.customerSentAt = sentAt;
+    }
+    if (target === "admin" || target === "all") {
+      state.mailStatus.adminSentAt = sentAt;
+    }
+
+    renderMailStatus();
   }
 
   function openPdfDemo() {
@@ -1101,6 +1351,7 @@
     PRODUCTS.forEach(function(_, i) { document.getElementById("qty" + i).value = 0; });
     renderCustomProducts();
     updateTotal();
+    state = {};
     showScreen(1);
   }
 
@@ -1108,6 +1359,7 @@
   applyUrlPrefill();
   renderCustomProducts();
   updateTotal();
+  updateHomeButtonVisibility(1);
 </script>
 </body>
 </html>
