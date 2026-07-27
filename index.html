@@ -152,6 +152,11 @@
     font-size: 12px;
   }
   table.products td.num, table.products th.num { text-align: right; white-space: nowrap; }
+  table.products td.unit-col, table.products th.unit-col,
+  table.est-items td.unit-col, table.est-items th.unit-col {
+    text-align: center;
+    white-space: nowrap;
+  }
   table.products select {
     padding: 6px 8px;
     border-radius: 6px;
@@ -537,7 +542,7 @@
         <label>ご希望サービス（数量を選択）<span class="req">1点以上</span></label>
         <table class="products">
           <thead>
-            <tr><th>商品名</th><th>単位</th><th class="num">税抜単価</th><th class="num">数量</th></tr>
+            <tr><th>商品名</th><th class="unit-col">単位</th><th class="num">税抜単価</th><th class="num">数量</th></tr>
           </thead>
           <tbody id="productRows"></tbody>
         </table>
@@ -631,7 +636,7 @@
 
         <table class="est-items">
           <thead>
-            <tr><th>商品名</th><th>単位</th><th class="num">数量</th><th class="num">単価（税抜）</th><th class="num">金額（税抜）</th></tr>
+            <tr><th>商品名</th><th class="unit-col">単位</th><th class="num">数量</th><th class="num">単価（税抜）</th><th class="num">金額（税抜）</th></tr>
           </thead>
           <tbody id="estItems"></tbody>
         </table>
@@ -776,6 +781,10 @@
     return Math.round(amountEx * TAX_RATE);
   }
 
+  function formatUnit(unit) {
+    return String(unit || "").replace(/^1(?=\D)/, "");
+  }
+
   function normalizeCtype(value) {
     var raw = String(value || "").trim();
     if (!raw) return "";
@@ -808,7 +817,7 @@
       for (var q = 0; q <= 10; q++) options += '<option value="' + q + '">' + q + "</option>";
       return "<tr>" +
         "<td>" + p.name + "</td>" +
-        "<td>" + p.unit + "</td>" +
+        '<td class="unit-col">' + formatUnit(p.unit) + "</td>" +
         '<td class="num">' + yen(p.priceEx) + "</td>" +
         '<td class="num"><select id="qty' + i + '" onchange="updateTotal()">' + options + "</select></td>" +
         "</tr>";
@@ -824,7 +833,7 @@
     list.innerHTML = customProducts.map(function(item, index) {
       return '<div class="custom-row">' +
         "<strong>" + item.name + "</strong>" +
-        "<span>" + item.unit + "</span>" +
+        "<span>" + formatUnit(item.unit) + "</span>" +
         '<span class="num">' + yen(item.priceEx) + "</span>" +
         '<span>数量 ' + item.qty + "</span>" +
         '<button type="button" class="remove-btn" onclick="removeCustomProduct(' + index + ')">削除</button>' +
@@ -1006,7 +1015,7 @@
     document.getElementById("estTotal").textContent = yen(state.total);
 
     document.getElementById("estItems").innerHTML = state.items.map(function(item) {
-      return "<tr><td>" + item.name + "</td><td>" + item.unit + "</td>" +
+      return "<tr><td>" + item.name + '</td><td class="unit-col">' + formatUnit(item.unit) + "</td>" +
         '<td class="num">' + item.qty + "</td>" +
         '<td class="num">' + yen(item.unitEx) + "</td>" +
         '<td class="num">' + yen(item.subtotalEx) + "</td></tr>";
