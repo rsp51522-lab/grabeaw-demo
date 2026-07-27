@@ -943,7 +943,7 @@
     { code: "NSL030", name: "注文・見積・領収書自動作成", unit: "1件", priceEx: 30000 }
   ];
   var TAX_RATE = 0.1;
-  var TOOLBOX_HOME_BASE = "https://business-card-line-app-nsl.vercel.app/";
+  var TOOLBOX_HOME_BASE = "https://business-card-line-app-nsl.vercel.app/?token=c529b0fb4d7369b6d9455ad77e5a90ca03cc5c4e9dd22c38866e9bf3eceb524a";
   var customProducts = [];
   var FLOW_STEPS = [
     ["フォーム回答シートへ追加", "お客様情報と希望サービスを自動記録します"],
@@ -1281,21 +1281,6 @@
     var params = new URLSearchParams(window.location.search);
     var home = (params.get("home") || "").trim();
     if (home) return home;
-
-    var token = (params.get("token") || "").trim();
-    if (token) return TOOLBOX_HOME_BASE + "?token=" + encodeURIComponent(token);
-
-    if (document.referrer) {
-      try {
-        var refUrl = new URL(document.referrer);
-        if (refUrl.hostname === "business-card-line-app-nsl.vercel.app") {
-          var refToken = (refUrl.searchParams.get("token") || "").trim();
-          return refToken
-            ? TOOLBOX_HOME_BASE + "?token=" + encodeURIComponent(refToken)
-            : TOOLBOX_HOME_BASE;
-        }
-      } catch (e) {}
-    }
     return TOOLBOX_HOME_BASE;
   }
 
