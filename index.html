@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NSL相談所 サービス見積デモ</title>
+<title>NSL相談所 サービス注文・見積書自動作成</title>
 <style>
   :root {
     --main: #0b5f8c;
@@ -479,6 +479,54 @@
     color: #1e3a8a;
     line-height: 1.6;
   }
+  .mail-gateway {
+    background: #f8fcff;
+    border: 1px solid #bfdbfe;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 18px;
+  }
+  .mail-gateway h3 {
+    font-size: 15px;
+    color: var(--main-dark);
+    margin-bottom: 4px;
+  }
+  .mail-gateway p {
+    font-size: 12px;
+    color: #475569;
+    line-height: 1.7;
+    margin-bottom: 10px;
+  }
+  .mail-gateway-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 120px;
+    gap: 10px;
+    align-items: end;
+  }
+  .mail-gateway label {
+    display: block;
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--main-dark);
+  }
+  .mail-gateway input {
+    width: 100%;
+    margin-top: 6px;
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 14px;
+    background: #fff;
+  }
+  .gateway-status {
+    margin-top: 10px;
+    font-size: 12px;
+    font-weight: bold;
+    line-height: 1.6;
+  }
+  .gateway-status.ready { color: #166534; }
+  .gateway-status.warn { color: #92400e; }
+  .gateway-status.error { color: #b91c1c; }
   .mail-actions {
     display: flex;
     flex-wrap: wrap;
@@ -565,6 +613,7 @@
     .custom-row { grid-template-columns: 1fr; }
     .discount-input { width: 100%; justify-content: space-between; }
     .discount-input input { width: 120px; }
+    .mail-gateway-row { grid-template-columns: 1fr; }
     .home-fab {
       width: 72px;
       height: 72px;
@@ -586,9 +635,9 @@
       <img src="./assets/nsl-logo.png" alt="NSL相談所ロゴ">
     </div>
     <div class="header-copy">
-      <div class="demo-badge">DEMO</div>
-      <h1>NSL相談所 サービス注文・見積書自動作成デモ</h1>
-      <p>会社情報とサービス内容を選ぶだけで、見積書PDFと管理表の流れを体験できます</p>
+      <div class="demo-badge">本番用</div>
+      <h1>NSL相談所 サービス注文・見積書自動作成</h1>
+      <p>会社情報とサービス内容を選ぶだけで、見積書作成からメール送信まで進められます</p>
     </div>
   </div>
 </header>
@@ -606,7 +655,7 @@
 
   <section id="screen1">
     <div class="card">
-      <h2>サービス注文フォーム（見積依頼デモ）</h2>
+      <h2>サービス注文フォーム</h2>
 
       <div class="field">
         <label>注文者区分<span class="req">必須</span></label>
@@ -694,8 +743,8 @@
       </div>
 
       <p class="error-msg" id="formError"></p>
-      <button class="btn" onclick="submitOrder()">この内容で見積依頼を送信する</button>
-      <p class="note">※デモのため実際の送信・保存・メール送信は行われません。</p>
+      <button class="btn" onclick="submitOrder()">この内容で見積書を作成する</button>
+      <p class="note">※送信口URLを設定すると、この後の画面から顧客メールと管理者通知を実際に送信できます。</p>
     </div>
   </section>
 
@@ -756,7 +805,7 @@
 
       <div class="btn-row">
         <button class="btn sub" type="button" onclick="showScreen(1)">戻る</button>
-        <button class="btn" type="button" onclick="showScreen(4)">送信されるメールと管理表を見る</button>
+        <button class="btn" type="button" onclick="showScreen(4)">送信内容と管理記録を見る</button>
       </div>
     </div>
   </section>
@@ -764,12 +813,23 @@
   <section id="screen4" class="hidden">
     <div class="card">
       <p class="edit-hint">✏️ メールの件名・本文もクリックして書き換えできます</p>
+      <div class="mail-gateway">
+        <h3>実送信用のGoogle送信口</h3>
+        <p>Google Apps Script の公開URLを入れると、この画面から顧客メールと管理者通知を実際に送信できます。</p>
+        <div class="mail-gateway-row">
+          <label>送信口URL
+            <input type="url" id="mailApiUrl" placeholder="https://script.google.com/macros/s/xxxxx/exec">
+          </label>
+          <button class="mini-button" type="button" onclick="saveMailApiUrl()">保存</button>
+        </div>
+        <div class="gateway-status warn" id="mailApiStatus">送信口URLがまだ入っていません。今は送信確認画面として表示しています。</div>
+      </div>
       <div class="mail-summary">
-        <div class="mail-summary-text" id="mailSummaryText">この時点では、まだメールは送っていません。下の送信ボタンを押すと、送信済み表示に変わります。</div>
+        <div class="mail-summary-text" id="mailSummaryText">この時点では、まだメールは送っていません。送信ボタンを押すと実際にメール送信します。</div>
         <button class="btn small" type="button" id="sendAllBtn" onclick="sendMailDemo('all')">2通まとめて送信する</button>
       </div>
 
-      <h2>お客様へ自動送信されるメール<span class="tag customer">顧客宛</span><span class="send-state waiting" id="customerSendState">未送信</span></h2>
+      <h2>お客様へ送信するメール<span class="tag customer">顧客宛</span><span class="send-state waiting" id="customerSendState">未送信</span></h2>
       <div class="mail">
         <div class="mail-head">
           <div>宛先：<span id="mailTo" contenteditable="true" spellcheck="false"></span></div>
@@ -783,7 +843,7 @@
         </div>
       </div>
 
-      <h2>管理者へ届く通知メール<span class="tag admin">管理者宛</span><span class="send-state waiting" id="adminSendState">未送信</span></h2>
+      <h2>管理者へ送信する通知メール<span class="tag admin">管理者宛</span><span class="send-state waiting" id="adminSendState">未送信</span></h2>
       <div class="mail">
         <div class="mail-head">
           <div>宛先：asano@nextsaleslab.com</div>
@@ -798,7 +858,7 @@
     </div>
 
     <div class="card">
-      <h2>スプレッドシートも自動更新されます</h2>
+      <h2>管理記録</h2>
 
       <div class="sheet-label">■ 注文管理シート</div>
       <div class="sheet-wrap">
@@ -826,11 +886,16 @@
 
       <div class="btn-row">
         <button class="btn sub" type="button" onclick="showScreen(3)">戻る</button>
-        <button class="btn sub" type="button" onclick="resetDemo()">もう一度はじめから試す</button>
+        <button class="btn sub" type="button" onclick="resetDemo()">新しい見積を作る</button>
       </div>
     </div>
   </section>
 </div>
+
+<form id="mailSendForm" class="hidden" method="post" target="mailSendFrame">
+  <input type="hidden" name="payload" id="mailPayloadInput">
+</form>
+<iframe name="mailSendFrame" id="mailSendFrame" class="hidden"></iframe>
 
 <button type="button" class="home-fab hidden" id="homeFab" aria-label="ホームへ戻る" onclick="goToolboxHome()">
   <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -841,6 +906,9 @@
 </button>
 
 <script>
+  var MAIL_API_STORAGE_KEY = "nslMailApiUrl";
+  var pendingMailTarget = "";
+  var pendingMailTimer = 0;
   var PRODUCTS = [
     { code: "NSL001", name: "領収書LINE Bot", unit: "1ID", priceEx: 8000 },
     { code: "NSL002", name: "LINE名刺管理Bot", unit: "1ID", priceEx: 8000 },
@@ -909,6 +977,139 @@
 
   function formatUnit(unit) {
     return String(unit || "").replace(/^1(?=\D)/, "");
+  }
+
+  function getMailApiUrl() {
+    var input = document.getElementById("mailApiUrl");
+    return input ? input.value.trim() : "";
+  }
+
+  function setMailApiStatus(message, kind) {
+    var el = document.getElementById("mailApiStatus");
+    if (!el) return;
+    el.textContent = message;
+    el.className = "gateway-status " + (kind || "warn");
+  }
+
+  function loadMailApiUrl() {
+    var params = new URLSearchParams(window.location.search);
+    var apiUrl = (params.get("mailApi") || params.get("api") || "").trim();
+    if (!apiUrl && typeof window !== "undefined" && window.localStorage) {
+      apiUrl = window.localStorage.getItem(MAIL_API_STORAGE_KEY) || "";
+    }
+    var input = document.getElementById("mailApiUrl");
+    if (input) input.value = apiUrl;
+    if (apiUrl) {
+      setMailApiStatus("送信口URLを読み込みました。実送信の準備ができています。", "ready");
+    } else {
+      setMailApiStatus("送信口URLがまだ入っていません。今は送信確認画面として表示しています。", "warn");
+    }
+  }
+
+  function saveMailApiUrl() {
+    var apiUrl = getMailApiUrl();
+    if (typeof window !== "undefined" && window.localStorage) {
+      if (apiUrl) {
+        window.localStorage.setItem(MAIL_API_STORAGE_KEY, apiUrl);
+      } else {
+        window.localStorage.removeItem(MAIL_API_STORAGE_KEY);
+      }
+    }
+    if (apiUrl) {
+      setMailApiStatus("送信口URLを保存しました。実送信の準備ができています。", "ready");
+    } else {
+      setMailApiStatus("送信口URLを消しました。いまは送信確認画面として表示しています。", "warn");
+    }
+    renderMailStatus();
+  }
+
+  function setSendButtonsDisabled(disabled) {
+    ["sendAllBtn", "customerSendBtn", "adminSendBtn"].forEach(function(id) {
+      var btn = document.getElementById(id);
+      if (btn) btn.disabled = !!disabled;
+    });
+  }
+
+  function buildEstimateDocument(title) {
+    var est = document.querySelector(".estimate");
+    if (!est) return "";
+    var css = document.querySelector("style").textContent;
+    var estHtml = est.outerHTML.replace(/ contenteditable="true"/g, "");
+    return "<!DOCTYPE html><html lang=\"ja\"><head><meta charset=\"UTF-8\">" +
+      "<title>" + String(title || state.fileName || "estimate").replace(/</g, "&lt;") + "</title>" +
+      "<style>" + css + " body{background:#fff;margin:0;padding:18px;} .estimate{margin:0 auto;}</style>" +
+      "</head><body>" + estHtml + "</body></html>";
+  }
+
+  function normalizeSubject(text) {
+    return String(text || "").replace(/^件名：\s*/, "").trim();
+  }
+
+  function buildMailRequest(target) {
+    return {
+      target: target,
+      order: {
+        orderNo: state.orderNo,
+        customerNo: state.customerNo,
+        ctype: state.ctype,
+        company: state.company,
+        name: state.name,
+        email: state.email,
+        payment: state.payment,
+        subtotal: state.subtotal,
+        tax: state.tax,
+        discount: state.discount,
+        total: state.total,
+        items: state.items
+      },
+      customerMail: {
+        to: document.getElementById("mailTo").textContent.trim(),
+        subject: normalizeSubject(document.getElementById("customerSubject").textContent),
+        body: document.getElementById("mailBody").textContent
+      },
+      adminMail: {
+        to: "asano@nextsaleslab.com",
+        subject: normalizeSubject(document.getElementById("adminSubject").textContent),
+        body: document.getElementById("adminBody").textContent
+      },
+      estimateFileName: state.fileName,
+      estimateHtml: buildEstimateDocument(state.fileName)
+    };
+  }
+
+  function clearPendingMailTimer() {
+    if (pendingMailTimer) {
+      clearTimeout(pendingMailTimer);
+      pendingMailTimer = 0;
+    }
+  }
+
+  function handleMailGatewayMessage(event) {
+    var data = event.data;
+    if (!data || data.source !== "nsl-mail-gateway") return;
+
+    clearPendingMailTimer();
+    setSendButtonsDisabled(false);
+
+    if (!pendingMailTarget) return;
+    if (!data.ok) {
+      setMailApiStatus(data.message || "メール送信に失敗しました。", "error");
+      alert("送信できませんでした。Google側の設定と送信口URLをご確認ください。");
+      pendingMailTarget = "";
+      return;
+    }
+
+    ensureMailStatus();
+    var sentAt = data.sentAt || formatDateTime(new Date());
+    if (pendingMailTarget === "customer" || pendingMailTarget === "all") {
+      state.mailStatus.customerSentAt = data.customerSentAt || sentAt;
+    }
+    if (pendingMailTarget === "admin" || pendingMailTarget === "all") {
+      state.mailStatus.adminSentAt = data.adminSentAt || sentAt;
+    }
+    pendingMailTarget = "";
+    setMailApiStatus(data.message || "メール送信が完了しました。", "ready");
+    renderMailStatus();
   }
 
   function normalizeCtype(value) {
@@ -1240,6 +1441,7 @@
 
     var customerSent = !!state.mailStatus.customerSentAt;
     var adminSent = !!state.mailStatus.adminSentAt;
+    var hasApiUrl = !!getMailApiUrl();
 
     document.getElementById("customerSendState").textContent = customerSent ? "送信済み" : "未送信";
     document.getElementById("customerSendState").className = "send-state " + (customerSent ? "sent" : "waiting");
@@ -1247,11 +1449,11 @@
     document.getElementById("adminSendState").className = "send-state " + (adminSent ? "sent" : "waiting");
 
     document.getElementById("customerSendNote").textContent = customerSent
-      ? "送信時刻：" + state.mailStatus.customerSentAt + "（デモ表示）"
-      : "まだ送信していません。";
+      ? "送信時刻：" + state.mailStatus.customerSentAt
+      : (hasApiUrl ? "まだ送信していません。" : "送信口URLを保存すると実送信できます。");
     document.getElementById("adminSendNote").textContent = adminSent
-      ? "送信時刻：" + state.mailStatus.adminSentAt + "（デモ表示）"
-      : "まだ送信していません。";
+      ? "送信時刻：" + state.mailStatus.adminSentAt
+      : (hasApiUrl ? "まだ送信していません。" : "送信口URLを保存すると実送信できます。");
 
     document.getElementById("customerSendBtn").textContent = customerSent
       ? "もう一度 顧客メールを送信"
@@ -1260,14 +1462,17 @@
       ? "もう一度 管理者通知を送信"
       : "この内容で管理者通知を送信";
 
-    if (customerSent && adminSent) {
+    if (!hasApiUrl) {
+      document.getElementById("mailSummaryText").textContent = "まず上の送信口URLを入れて保存してください。保存後は、この画面から実際にメール送信できます。";
+      document.getElementById("sendAllBtn").textContent = "送信口URLを設定してから送信";
+    } else if (customerSent && adminSent) {
       document.getElementById("mailSummaryText").textContent = "顧客メールと管理者通知は送信済みです。必要なら下のボタンで再送できます。";
       document.getElementById("sendAllBtn").textContent = "2通まとめて再送信する";
     } else if (customerSent || adminSent) {
       document.getElementById("mailSummaryText").textContent = "一部だけ送信済みです。残り1通を送るか、まとめて再送信できます。";
       document.getElementById("sendAllBtn").textContent = "2通まとめて送信する";
     } else {
-      document.getElementById("mailSummaryText").textContent = "この時点では、まだメールは送っていません。下の送信ボタンを押すと、送信済み表示に変わります。";
+      document.getElementById("mailSummaryText").textContent = "この時点では、まだメールは送っていません。送信ボタンを押すと実際にメール送信します。";
       document.getElementById("sendAllBtn").textContent = "2通まとめて送信する";
     }
 
@@ -1298,17 +1503,35 @@
   }
 
   function sendMailDemo(target) {
+    if (!state || !state.orderNo) {
+      alert("先に注文フォームを送信してください。");
+      return;
+    }
+    var apiUrl = getMailApiUrl();
+    if (!apiUrl) {
+      setMailApiStatus("送信口URLが未設定です。Google Apps Script の公開URLを入れてください。", "error");
+      alert("送信口URLがまだ入っていません。Google Apps Script の公開URLを入れて保存してください。");
+      return;
+    }
+
     ensureMailStatus();
-    var sentAt = formatDateTime(new Date());
+    pendingMailTarget = target;
+    setSendButtonsDisabled(true);
+    setMailApiStatus("Googleへ送信依頼を出しています。完了まで数秒お待ちください。", "ready");
 
-    if (target === "customer" || target === "all") {
-      state.mailStatus.customerSentAt = sentAt;
-    }
-    if (target === "admin" || target === "all") {
-      state.mailStatus.adminSentAt = sentAt;
-    }
+    clearPendingMailTimer();
+    pendingMailTimer = setTimeout(function() {
+      pendingMailTarget = "";
+      setSendButtonsDisabled(false);
+      setMailApiStatus("返事が返らないため、送信結果を確認できませんでした。Google側の設定をご確認ください。", "error");
+      alert("送信結果を確認できませんでした。Google Apps Script の公開設定をご確認ください。");
+    }, 25000);
 
-    renderMailStatus();
+    var form = document.getElementById("mailSendForm");
+    var payloadInput = document.getElementById("mailPayloadInput");
+    form.action = apiUrl;
+    payloadInput.value = JSON.stringify(buildMailRequest(target));
+    form.submit();
   }
 
   function openPdfDemo() {
@@ -1357,9 +1580,11 @@
 
   initProducts();
   applyUrlPrefill();
+  loadMailApiUrl();
   renderCustomProducts();
   updateTotal();
   updateHomeButtonVisibility(1);
+  window.addEventListener("message", handleMailGatewayMessage);
 </script>
 </body>
 </html>
