@@ -972,6 +972,16 @@
     return d.getFullYear() + sep + pad(d.getMonth() + 1, 2) + sep + pad(d.getDate(), 2);
   }
 
+  function nowStamp() {
+    var d = new Date();
+    return todayStr("") + "-" + pad(d.getHours(), 2) + pad(d.getMinutes(), 2) + pad(d.getSeconds(), 2);
+  }
+
+  function customerNoStamp() {
+    var d = new Date();
+    return "C-" + todayStr("") + "-" + pad(d.getHours(), 2) + pad(d.getMinutes(), 2) + pad(d.getSeconds(), 2);
+  }
+
   function calcTax(amountEx) {
     return Math.round(amountEx * TAX_RATE);
   }
@@ -1330,8 +1340,8 @@
       tax: tax,
       discount: discount,
       total: total,
-      orderNo: "NSL-" + todayStr("") + "-001",
-      customerNo: "C-000001"
+      orderNo: "NSL-" + nowStamp(),
+      customerNo: customerNoStamp()
     };
     state.addressee = state.company ? state.company + " 御中" : state.name + " 様";
     state.fileName = (state.company ? state.company + "御中" : state.name + "様") + "_御見積書_" + state.orderNo + ".pdf";
@@ -1390,25 +1400,33 @@
 
   function renderScreen4() {
     document.getElementById("mailTo").textContent = state.email;
+    document.getElementById("customerSubject").textContent = "件名：NSL相談所 御見積書送付のご案内（" + state.orderNo + "）";
     document.getElementById("mailBody").textContent =
-      state.addressee + "\n\nこの度はお問い合わせありがとうございます。\n\nNSL相談所より御見積書を送付いたします。\n内容をご確認のうえ、ご不明点があれば 090-8100-1417 までご連絡ください。\n\nよろしくお願いいたします。";
+      state.addressee + "\n\n平素よりお世話になっております。\nNSL相談所の浅野です。\n\nこの度はお問い合わせをいただき、誠にありがとうございます。\n御見積書を送付いたしますので、ご確認をお願いいたします。\n\nご検討のうえ、ご不明点や修正のご希望がございましたら、お気軽にご連絡ください。\n\n【お問い合わせ先】\nNSL相談所\n代表 浅野隆史\nTEL：090-8100-1417\nMAIL：asano@nextsaleslab.com\n\n今後ともよろしくお願いいたします。";
     document.getElementById("mailAttach").textContent = state.fileName;
 
     var displayName = state.company || state.name;
-    document.getElementById("adminSubject").textContent = "件名：" + displayName + "様の見積書を保存しました";
+    var itemSummary = state.items.map(function(item) { return item.name + " x" + item.qty; }).join(", ");
+    document.getElementById("adminSubject").textContent = "件名：【見積依頼受付】" + displayName + " 様 / " + state.orderNo;
     document.getElementById("adminBody").textContent =
-      "見積書PDFを保存しました。\n\n注文番号: " + state.orderNo +
+      "見積依頼を受け付けました。\n\n" +
+      "注文番号: " + state.orderNo +
+      "\n顧客番号: " + state.customerNo +
+      "\n注文者区分: " + state.ctype +
       "\n会社名・店舗名: " + (state.company || "（なし）") +
-      "\nお客様名: " + state.name +
+      "\nご担当者名: " + state.name +
+      "\nメールアドレス: " + state.email +
+      "\n支払方法: " + state.payment +
+      "\nご依頼内容: " + itemSummary +
+      "\n小計（税抜）: " + yen(state.subtotal) +
+      "\n消費税: " + yen(state.tax) +
       "\n割引額（税抜）: " + yenDiscount(state.discount) +
-      "\n見積金額: " + yen(state.total) +
+      "\n合計金額（税込）: " + yen(state.total) +
       "\nファイル名: " + state.fileName +
-      "\n連絡先: " + state.email +
       "\nPDF URL: https://drive.google.com/...（自動発行）";
 
     var pdfLink = '<a onclick="openPdfDemo()">PDFを開く</a>';
     var pdfUrlLink = '<a onclick="openPdfDemo()">https://drive.google.com/...</a>';
-    var itemSummary = state.items.map(function(item) { return item.name + " x" + item.qty; }).join(", ");
 
     document.getElementById("orderRow").innerHTML =
       "<td>" + state.orderNo + "</td><td>" + state.customerNo + "</td><td>" + state.name + "</td>" +
