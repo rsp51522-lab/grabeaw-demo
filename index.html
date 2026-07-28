@@ -892,10 +892,9 @@
   </section>
 </div>
 
-<form id="mailSendForm" class="hidden" method="post" target="mailSendFrame">
+<form id="mailSendForm" class="hidden" method="post" target="mailSendPopup">
   <input type="hidden" name="payload" id="mailPayloadInput">
 </form>
-<iframe name="mailSendFrame" id="mailSendFrame" class="hidden"></iframe>
 
 <button type="button" class="home-fab hidden" id="homeFab" aria-label="ホームへ戻る" onclick="goToolboxHome()">
   <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -907,9 +906,10 @@
 
 <script>
   var MAIL_API_STORAGE_KEY = "nslMailApiUrl";
-  var DEFAULT_MAIL_API_URL = "https://script.google.com/macros/s/AKfycby1_XLhpxeY8wbnbwZiNSZYCVCHPwxqRvZ3GLbAzTZVouCPvks7e9rAwQ4cKcKr_Mwy/exec";
+  var DEFAULT_MAIL_API_URL = "https://script.google.com/macros/s/AKfycbx9T7ktTqkXVU6KFaaZ0VyseXx-_b72ttPUF8Hrbkq2NH8cCxStvRoGSex6oa5i5pFF/exec";
   var pendingMailTarget = "";
   var pendingMailTimer = 0;
+  var mailSendPopup = null;
   var PRODUCTS = [
     { code: "NSL001", name: "領収書LINE Bot", unit: "1ID", priceEx: 8000 },
     { code: "NSL002", name: "LINE名刺管理Bot", unit: "1ID", priceEx: 8000 },
@@ -1098,12 +1098,20 @@
     }
   }
 
+  function closeMailSendPopup() {
+    if (mailSendPopup && !mailSendPopup.closed) {
+      try { mailSendPopup.close(); } catch (e) {}
+    }
+    mailSendPopup = null;
+  }
+
   function handleMailGatewayMessage(event) {
     var data = event.data;
     if (!data || data.source !== "nsl-mail-gateway") return;
 
     clearPendingMailTimer();
     setSendButtonsDisabled(false);
+    closeMailSendPopup();
 
     if (!pendingMailTarget) return;
     if (!data.ok) {
@@ -1530,13 +1538,25 @@
     pendingMailTimer = setTimeout(function() {
       pendingMailTarget = "";
       setSendButtonsDisabled(false);
+      closeMailSendPopup();
       setMailApiStatus("返事が返らないため、送信結果を確認できませんでした。Google側の設定をご確認ください。", "error");
       alert("送信結果を確認できませんでした。Google Apps Script の公開設定をご確認ください。");
     }, 25000);
 
     var form = document.getElementById("mailSendForm");
     var payloadInput = document.getElementById("mailPayloadInput");
+    closeMailSendPopup();
+    mailSendPopup = window.open("about:blank", "mailSendPopup", "width=540,height=680");
+    if (!mailSendPopup) {
+      pendingMailTarget = "";
+      clearPendingMailTimer();
+      setSendButtonsDisabled(false);
+      setMailApiStatus("送信用の小さい画面を開けませんでした。ブラウザのポップアップ許可をご確認ください。", "error");
+      alert("送信用の小さい画面を開けませんでした。Chrome右上のポップアップ許可をご確認ください。");
+      return;
+    }
     form.action = apiUrl;
+    form.target = "mailSendPopup";
     payloadInput.value = JSON.stringify(buildMailRequest(target));
     form.submit();
   }
