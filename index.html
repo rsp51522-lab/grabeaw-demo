@@ -1006,24 +1006,18 @@
 
   function loadMailApiUrl() {
     var params = new URLSearchParams(window.location.search);
-    var apiUrl = (params.get("mailApi") || params.get("api") || "").trim();
-    if (!apiUrl && typeof window !== "undefined" && window.localStorage) {
-      apiUrl = window.localStorage.getItem(MAIL_API_STORAGE_KEY) || "";
-    }
-    var migrated = apiUrl.indexOf(RETIRED_MAIL_API_URL_PART) !== -1;
-    if (migrated) {
-      apiUrl = DEFAULT_MAIL_API_URL;
-      if (typeof window !== "undefined" && window.localStorage) {
-        window.localStorage.setItem(MAIL_API_STORAGE_KEY, apiUrl);
-      }
-    }
-    if (!apiUrl) {
-      apiUrl = DEFAULT_MAIL_API_URL;
+    var requestedApiUrl = (params.get("mailApi") || params.get("api") || "").trim();
+    // The estimate app has one production gateway. Always replace stale browser data.
+    var apiUrl = requestedApiUrl || DEFAULT_MAIL_API_URL;
+    var migrated = !requestedApiUrl && typeof window !== "undefined" && window.localStorage &&
+      window.localStorage.getItem(MAIL_API_STORAGE_KEY) !== DEFAULT_MAIL_API_URL;
+    if (typeof window !== "undefined" && window.localStorage) {
+      window.localStorage.setItem(MAIL_API_STORAGE_KEY, apiUrl);
     }
     var input = document.getElementById("mailApiUrl");
     if (input) input.value = apiUrl;
     if (migrated) {
-      setMailApiStatus("古い送信口URLを新しい送信口へ更新しました。実送信の準備ができています。", "ready");
+      setMailApiStatus("保存されていた送信口URLを新しい送信口へ更新しました。実送信の準備ができています。", "ready");
     } else if (apiUrl) {
       setMailApiStatus("送信口URLを読み込みました。実送信の準備ができています。", "ready");
     } else {
